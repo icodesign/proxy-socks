@@ -1,0 +1,18 @@
+[package]
+name = "proxy-socks"
+version = "0.1.0"
+authors = ["icodesign <github@icodesign.me>"]
+edition = "2018"
+license-file = "LICENSE"
+description = "Client/Server implementation of Socks proxy written in Rust"
+homepage = "https://github.com/icodesign/proxy-socks"
+repository = "https://github.com/icodesign/proxy-socks"
+
+[dependencies]
+async-trait = "0.1"
+bytes = "0.5"
+log = "0.4"
+proxy-relay = { git = "https://github.com/icodesign/proxy-relay", branch = "tokio0.2"}
+thiserror = "1.0"
+tokio = { version = "0.2", features = ["rt-core", "io-util", "net", "stream", "macros"] }
+trust-dns-resolver = "0.19"
