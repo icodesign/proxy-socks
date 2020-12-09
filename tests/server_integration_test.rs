@@ -1,9 +1,7 @@
 use log::debug;
-use proxy_socks::server::SocksServer;
 use proxy_socks::test_utils;
 use std::net::{IpAddr, Ipv4Addr, Shutdown};
 use tokio::prelude::*;
-use tokio::runtime::Handle;
 use tokio::net::TcpStream;
 
 #[tokio::test]

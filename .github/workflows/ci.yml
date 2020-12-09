@@ -25,11 +25,11 @@ jobs:
           toolchain: stable
           target: ${{ matrix.triple.target }}
           override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features --target=${{ matrix.triple.target }}
-          use-cross: ${{ matrix.triple.cross }}
+#      - uses: actions-rs/cargo@v1
+#        with:
+#          command: test
+#          args: --all-features --target=${{ matrix.triple.target }}
+#          use-cross: ${{ matrix.triple.cross }}
       - uses: actions-rs/cargo@v1
         with:
           command: build

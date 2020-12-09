@@ -1,11 +1,9 @@
 use log::debug;
 use proxy_relay::TargetAddr;
 use proxy_socks::client::{SocksClient, SocksProxyConfig};
-use proxy_socks::server::SocksServer;
 use proxy_socks::test_utils;
-use std::net::{Shutdown, SocketAddr};
+use std::net::Shutdown;
 use tokio::prelude::*;
-use tokio::runtime::Handle;
 use trust_dns_resolver::TokioAsyncResolver;
 
 #[tokio::test]
