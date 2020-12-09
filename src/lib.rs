@@ -5,6 +5,8 @@ pub mod auth;
 pub mod client;
 pub mod common;
 pub mod server;
+#[cfg(feature = "test-utils")]
+pub mod test_utils;
 
 #[cfg(test)]
 mod tests {

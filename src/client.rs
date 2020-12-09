@@ -125,86 +125,28 @@ impl SocksClient {
             methods, version
         );
         let auth_methods_request = SocksAuthMethodsRequest::new(version, methods);
+        debug!("Sending auth method request: {:?}", auth_methods_request);
         auth_methods_request.write_to(&mut outbound).await?;
         let auth_methods_response = SocksAuthMethodsResponse::read_from(&mut inbound).await?;
+        debug!("Received server auth method response: {:?}", auth_methods_response);
         let method_res = auth_methods_response.method;
         if method_res.is_none() {
             return Err(SocksError::NoAuthMethodSupported);
         }
         let method = method_res.unwrap();
-        debug!("Received server selected auth method: {:?}", method);
+        debug!("Selected auth method: {:?}", method);
         auth_provider
             .authenticate(version, method, &mut inbound, &mut outbound)
             .await?;
         let request = SocksRequest::new(version, SocksCommand::Connect, target_addr);
-        debug!("Writing request: {:?}", request);
+        debug!("Sending request: {:?}", request);
         request.write_to(&mut outbound).await?;
         let response = SocksResponse::read_from(&mut inbound).await?;
+        debug!("Received server response: {:?}", response);
         if response.code != SocksResponseCode::Success {
+            debug!("Received server response code: {:?}", response.code);
             return Err(SocksError::ConnectionFailed(response.code));
         }
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::client::{SocksClient, SocksProxyConfig};
-    use crate::server::SocksServer;
-    use proxy_relay::TargetAddr;
-    use std::net::{Shutdown, SocketAddr};
-    use tokio::net::{TcpListener, TcpStream};
-    use tokio::prelude::*;
-    use tokio::runtime::Handle;
-    use tokio::stream::StreamExt;
-    use trust_dns_resolver::TokioAsyncResolver;
-
-    #[tokio::test]
-    async fn socks_client_integration() {
-        let upstream_addr = start_test_upstream_server().await.unwrap();
-        let proxy_addr = start_socks_server().await.unwrap();
-        let resolver = TokioAsyncResolver::tokio_from_system_conf().await.unwrap();
-        let proxy = TargetAddr::Addr(proxy_addr);
-        let server = SocksProxyConfig::new_auth(proxy, "user", "pass");
-        let mut connection =
-            SocksClient::connect(TargetAddr::Addr(upstream_addr), &server, &resolver)
-                .await
-                .unwrap();
-        let _ = connection.write(b"hello world!").await;
-        let _ = connection.shutdown(Shutdown::Write);
-        let mut buffer = String::new();
-        let _ = connection.read_to_string(&mut buffer).await;
-        debug!("The response: {:?}", &buffer);
-    }
-
-    async fn start_socks_server() -> io::Result<SocketAddr> {
-        let proxy =
-            SocksServer::start_auth(("127.0.0.1", 0), "user", "pass", Handle::current()).await?;
-        Ok(proxy.local_addr())
-    }
-
-    async fn start_test_upstream_server() -> io::Result<SocketAddr> {
-        let mut listener = TcpListener::bind(("127.0.0.1", 0)).await?;
-        let addr = listener.local_addr()?;
-        tokio::spawn(async move {
-            while let Some(socket_res) = listener.incoming().next().await {
-                let mut socket: TcpStream = match socket_res {
-                    Err(e) => {
-                        warn!("error accepting tcp socket: {:?}", e);
-                        continue;
-                    }
-                    Ok(socket) => socket,
-                };
-                debug!(
-                    "Test server accepted connection from {:?}",
-                    socket.peer_addr()
-                );
-                tokio::spawn(async move {
-                    let (mut reader, mut writer) = socket.split();
-                    tokio::io::copy(&mut reader, &mut writer).await
-                });
-            }
-        });
-        Ok(addr)
     }
 }

@@ -8,6 +8,10 @@ description = "Client/Server implementation of Socks proxy written in Rust"
 homepage = "https://github.com/icodesign/proxy-socks"
 repository = "https://github.com/icodesign/proxy-socks"
 
+[features]
+default = []
+test-utils = []
+
 [dependencies]
 async-trait = "0.1"
 bytes = "0.5"
@@ -16,3 +20,11 @@ proxy-relay = { git = "https://github.com/icodesign/proxy-relay", branch = "toki
 thiserror = "1.0"
 tokio = { version = "0.2", features = ["rt-core", "io-util", "net", "stream", "macros"] }
 trust-dns-resolver = "0.19"
+
+[dev-dependencies]
+criterion = "0.3"
+rand = { version = "0.7", features = ["small_rng"] }
+env_logger = "0.8"
+
+[[bench]]
+name = "bench"

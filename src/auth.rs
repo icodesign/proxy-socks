@@ -41,29 +41,16 @@ impl SocksServerAuthProvider for PlainSocksServerAuthProvider {
 
     async fn validate<R, W>(
         &self,
-        version: SocksVersion,
-        method: SocksAuthMethod,
+        _version: SocksVersion,
+        _method: SocksAuthMethod,
         _inbound: &mut R,
-        outbound: &mut W,
+        _outbound: &mut W,
     ) -> Result<()>
     where
         R: AsyncRead + Unpin + Send,
         W: AsyncWrite + Unpin + Send,
     {
-        if version != SocksVersion::V5 {
-            auth_respond(version, false, outbound).await?;
-            return Err(SocksError::VersionNotSupported(version.into()));
-        }
-        match method {
-            SocksAuthMethod::None => {
-                auth_respond(version, true, outbound).await?;
-                Ok(())
-            }
-            _ => {
-                auth_respond(version, false, outbound).await?;
-                Err(SocksError::AuthMethodNotSupported(method.into()))
-            }
-        }
+        Ok(())
     }
 }
 
