@@ -118,6 +118,10 @@ impl SocksClient {
         version: SocksVersion,
         auth_provider: T,
     ) -> Result<()> {
+        let nodelay = connection.nodelay();
+        if let Err(e) = connection.set_nodelay(true) {
+            warn!("Couldn't enable tcp_nodelay: {:?}", e);
+        }
         let (mut inbound, mut outbound) = connection.split();
         let methods = auth_provider.methods().await;
         debug!(
@@ -146,6 +150,16 @@ impl SocksClient {
         if response.code != SocksResponseCode::Success {
             debug!("Received server response code: {:?}", response.code);
             return Err(SocksError::ConnectionFailed(response.code));
+        }
+        match nodelay {
+            Ok(nodelay) => {
+                if let Err(e) = connection.set_nodelay(nodelay) {
+                    warn!("Couldn't disable tcp_nodelay: {:?}", e);
+                }
+            },
+            Err(e) => {
+                warn!("Couldn't fetch tcp_nodelay status: {:?}", e);
+            }
         }
         Ok(())
     }
