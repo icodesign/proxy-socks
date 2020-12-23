@@ -1,19 +1,17 @@
+use crate::server::SocksServer;
 use std::net::SocketAddr;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::prelude::*;
-use tokio::stream::StreamExt;
-use crate::server::SocksServer;
 use tokio::runtime::Handle;
+use tokio::stream::StreamExt;
 
 pub async fn start_no_auth_socks_server() -> io::Result<SocketAddr> {
-    let proxy =
-        SocksServer::start_no_auth(("127.0.0.1", 0), Handle::current()).await?;
+    let proxy = SocksServer::start_no_auth(("127.0.0.1", 0), Handle::current()).await?;
     Ok(proxy.local_addr())
 }
 
 pub async fn start_auth_socks_server(user: &str, pass: &str) -> io::Result<SocketAddr> {
-    let proxy =
-        SocksServer::start_auth(("127.0.0.1", 0), user, pass, Handle::current()).await?;
+    let proxy = SocksServer::start_auth(("127.0.0.1", 0), user, pass, Handle::current()).await?;
     Ok(proxy.local_addr())
 }
 

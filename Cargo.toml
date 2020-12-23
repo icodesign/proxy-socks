@@ -16,10 +16,9 @@ test-utils = []
 async-trait = "0.1"
 bytes = "0.5"
 log = "0.4"
-proxy-relay = { git = "https://github.com/icodesign/proxy-relay", branch = "tokio0.2" }
+proxy-relay = { git = "https://github.com/icodesign/proxy-relay", rev = "5f98af75f954f22e703187008f901fce45aa0bf0", features = ["dns"] }
 thiserror = "1.0"
 tokio = { version = "0.2", features = ["rt-core", "io-util", "net", "stream", "macros"] }
-trust-dns-resolver = { version = "0.19", features = ["dns-over-rustls", "dns-over-https-rustls"] }
 
 [dev-dependencies]
 criterion = "0.3"

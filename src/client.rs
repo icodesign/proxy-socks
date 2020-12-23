@@ -2,10 +2,9 @@ use crate::auth::{
     PlainSocksClientAuthProvider, ProtectedSocksClientAuthProvider, SocksClientAuthProvider,
 };
 use crate::common::*;
+use proxy_relay::dns::DNSResolver;
 use proxy_relay::TargetAddr;
 use tokio::net::TcpStream;
-use trust_dns_resolver::proto::DnsHandle;
-use trust_dns_resolver::{AsyncResolver, ConnectionProvider};
 
 #[derive(Clone, Debug)]
 pub struct SocksProxyConfig {
@@ -53,10 +52,10 @@ impl SocksProxyAuthConfig {
 pub struct SocksClient;
 
 impl SocksClient {
-    pub async fn connect<C: DnsHandle, P: ConnectionProvider<Conn = C>>(
+    pub async fn connect<D: DNSResolver>(
         target: TargetAddr,
         proxy: &SocksProxyConfig,
-        resolver: &AsyncResolver<C, P>,
+        resolver: &D,
     ) -> Result<TcpStream> {
         let target_addr = SocksAddr::new(target);
         match &proxy.auth {
@@ -68,35 +67,31 @@ impl SocksClient {
         }
     }
 
-    async fn connect_no_auth<C: DnsHandle, P: ConnectionProvider<Conn = C>>(
+    async fn connect_no_auth<D: DNSResolver>(
         target_addr: SocksAddr,
         proxy_addr: TargetAddr,
-        resolver: &AsyncResolver<C, P>,
+        resolver: &D,
     ) -> Result<TcpStream> {
         let auth_provider = PlainSocksClientAuthProvider::new();
         SocksClient::connect_inner(target_addr, proxy_addr, auth_provider, resolver).await
     }
 
-    async fn connect_auth<C: DnsHandle, P: ConnectionProvider<Conn = C>>(
+    async fn connect_auth<D: DNSResolver>(
         target_addr: SocksAddr,
         proxy_addr: TargetAddr,
         proxy_auth: SocksProxyAuthConfig,
-        resolver: &AsyncResolver<C, P>,
+        resolver: &D,
     ) -> Result<TcpStream> {
         let auth_provider =
             ProtectedSocksClientAuthProvider::new(proxy_auth.username(), proxy_auth.password());
         SocksClient::connect_inner(target_addr, proxy_addr, auth_provider, resolver).await
     }
 
-    async fn connect_inner<
-        T: SocksClientAuthProvider + Send + Sync,
-        C: DnsHandle,
-        P: ConnectionProvider<Conn = C>,
-    >(
+    async fn connect_inner<T: SocksClientAuthProvider + Send + Sync, D: DNSResolver>(
         target_addr: SocksAddr,
         proxy_addr: TargetAddr,
         proxy_auth_provider: T,
-        resolver: &AsyncResolver<C, P>,
+        resolver: &D,
     ) -> Result<TcpStream> {
         debug!("Connecting to proxy...");
         let mut connection = proxy_addr.connect(resolver).await?;
@@ -132,7 +127,10 @@ impl SocksClient {
         debug!("Sending auth method request: {:?}", auth_methods_request);
         auth_methods_request.write_to(&mut outbound).await?;
         let auth_methods_response = SocksAuthMethodsResponse::read_from(&mut inbound).await?;
-        debug!("Received server auth method response: {:?}", auth_methods_response);
+        debug!(
+            "Received server auth method response: {:?}",
+            auth_methods_response
+        );
         let method_res = auth_methods_response.method;
         if method_res.is_none() {
             return Err(SocksError::NoAuthMethodSupported);
@@ -156,7 +154,7 @@ impl SocksClient {
                 if let Err(e) = connection.set_nodelay(nodelay) {
                     warn!("Couldn't disable tcp_nodelay: {:?}", e);
                 }
-            },
+            }
             Err(e) => {
                 warn!("Couldn't fetch tcp_nodelay status: {:?}", e);
             }

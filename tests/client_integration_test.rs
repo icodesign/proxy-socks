@@ -10,7 +10,9 @@ use trust_dns_resolver::TokioAsyncResolver;
 async fn socks_client_auth_integration() {
     // let _ = env_logger::try_init();
     let upstream_addr = test_utils::start_test_upstream_server(true).await.unwrap();
-    let proxy_addr = test_utils::start_auth_socks_server("user", "pass").await.unwrap();
+    let proxy_addr = test_utils::start_auth_socks_server("user", "pass")
+        .await
+        .unwrap();
     let resolver = TokioAsyncResolver::tokio_from_system_conf().await.unwrap();
     let proxy = TargetAddr::Addr(proxy_addr);
     let server = SocksProxyConfig::new_auth(proxy, "user", "pass");

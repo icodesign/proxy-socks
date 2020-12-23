@@ -91,9 +91,6 @@ async fn handle_raw_request<T: SocksServerAuthProvider>(socket: TcpStream, auth_
     let res = connection.handshake().await;
     match res {
         Ok(outbound) => {
-            if let Err(e) = connection.set_nodelay(false) {
-                warn!("{}: Couldn't disable tcp_nodelay: {:?}", &connection.identifier, e);
-            }
             let _ = connection.relay(outbound).await;
         }
         Err(err) => {
@@ -204,10 +201,10 @@ impl<T: SocksServerAuthProvider> SocksConnection<T> {
         }?;
         match nodelay {
             Ok(nodelay) => {
-                if let Err(e) = connection.set_nodelay(nodelay) {
+                if let Err(e) = self.socket.set_nodelay(nodelay) {
                     warn!("Couldn't disable tcp_nodelay: {:?}", e);
                 }
-            },
+            }
             Err(e) => {
                 warn!("Couldn't fetch tcp_nodelay status: {:?}", e);
             }
@@ -217,9 +214,6 @@ impl<T: SocksServerAuthProvider> SocksConnection<T> {
 
     async fn relay(&mut self, mut outbound: TcpStream) -> io::Result<()> {
         warn!("{}: Starting relay...", &self.identifier);
-        if let Err(e) = outbound.set_nodelay(false) {
-            error!("{}: Couldn't disable tcp_nodelay for outbound: {:?}", &self.identifier, e);
-        }
         let (written, received) = relay(&mut self.socket, &mut outbound).await?;
         debug!(
             "{}: Client wrote {} bytes and received {} bytes",
